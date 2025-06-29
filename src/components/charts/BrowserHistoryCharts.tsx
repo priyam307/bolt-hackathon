@@ -97,15 +97,39 @@ export const BrowserHistoryCharts: React.FC = () => {
     )
   }
 
+  if (!analytics && data) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <CardTitle className="mb-2">Unable to process data</CardTitle>
+            <CardDescription>
+              The browser history data format is not recognized. Please ensure you've uploaded a valid browser history file.
+            </CardDescription>
+            <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950 rounded text-yellow-700 dark:text-yellow-300 text-sm">
+              <p>Expected formats:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Chrome visits.json export</li>
+                <li>Browser history JSON with visit records</li>
+                <li>Array of visit objects with URL and timestamp</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    )
+  }
+
   if (!analytics) {
     return (
       <Card>
         <CardContent className="flex items-center justify-center py-12">
           <div className="text-center">
             <Activity className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <CardTitle className="mb-2">Processing data...</CardTitle>
+            <CardTitle className="mb-2">No valid data found</CardTitle>
             <CardDescription>
-              Analyzing your browser history data. This may take a moment for large datasets.
+              Please upload a valid browser history file to see your browsing analytics.
             </CardDescription>
           </div>
         </CardContent>
