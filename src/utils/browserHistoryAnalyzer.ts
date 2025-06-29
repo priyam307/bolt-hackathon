@@ -321,7 +321,7 @@ export class BrowserHistoryAnalyzer {
       })
       .map(visit => {
         // Only log first few visits to avoid spam
-        if (processedVisits.length < 3) {
+        if (visits.length < 3) {
           console.log('🔍 Processing visit:', { url: visit?.url, time_usec: visit?.time_usec, id: visit?.id });
         }
         
@@ -352,7 +352,7 @@ export class BrowserHistoryAnalyzer {
           time_usec: visit.time_usec
         }
       
-        if (processedVisits.length < 3) {
+        if (visits.length < 3) {
           console.log('🔍 Processed visit result:', { url: processedVisit.url, timestamp: processedVisit.timestamp });
         }
         
@@ -361,7 +361,7 @@ export class BrowserHistoryAnalyzer {
       .filter(visit => {
         // Validate URL
         if (!visit.url || typeof visit.url !== 'string') {
-          if (processedVisits.length < 10) {
+          if (visits.length < 10) {
             console.log('❌ Invalid URL:', visit.url);
           }
           return false
@@ -378,7 +378,7 @@ export class BrowserHistoryAnalyzer {
         )
         
         if (!hasValidUrl) {
-          if (processedVisits.length < 10) {
+          if (visits.length < 10) {
             console.log('❌ Invalid URL format:', visit.url, 'length:', visit.url?.length);
           }
           return false
@@ -391,13 +391,13 @@ export class BrowserHistoryAnalyzer {
           visit.timestamp > 946684800000 // After year 2000
         
         if (!hasValidTimestamp) {
-          if (processedVisits.length < 10) {
+          if (visits.length < 10) {
             console.log('❌ Invalid timestamp:', visit.timestamp, 'original:', visit.visitTime, 'for URL:', visit.url);
           }
           return false
         }
         
-        if (processedVisits.length < 3) {
+        if (visits.length < 3) {
           console.log('✅ Valid visit:', { url: visit.url.substring(0, 50), timestamp: visit.timestamp });
         }
         return true
