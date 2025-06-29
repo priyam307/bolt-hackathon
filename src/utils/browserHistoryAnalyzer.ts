@@ -335,7 +335,7 @@ export class BrowserHistoryAnalyzer {
                          visit.date ||
                          Date.now()
         
-        if (processedVisits.length < 3) {
+        if (visits.length < 3) {
           console.log('🔍 Extracted visit time:', visitTime, 'from visit:', visit?.url);
         }
       
