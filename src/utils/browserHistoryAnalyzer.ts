@@ -128,6 +128,15 @@ export class BrowserHistoryAnalyzer {
     
     let visits: any[] = []
     
+    // Log the exact structure we're working with
+    console.log('🔍 Raw data structure:', {
+      type: typeof data,
+      isArray: Array.isArray(data),
+      keys: typeof data === 'object' && !Array.isArray(data) ? Object.keys(data) : 'not object',
+      length: Array.isArray(data) ? data.length : 'not array',
+      sample: Array.isArray(data) ? data[0] : typeof data === 'object' ? Object.values(data)[0] : data
+    })
+    
     // PRIORITY: Handle Chrome visits.json format specifically
     console.log('🔍 Checking for Chrome visits format...');
     // Chrome exports often have this exact structure
@@ -150,6 +159,59 @@ export class BrowserHistoryAnalyzer {
           console.log('✅ Detected Chrome visits format in direct array');
           console.log('✅ Sample Chrome visit:', sample);
           visits = data
+        }
+      }
+    }
+    
+    // Handle nested ZIP/Takeout structures
+    if (visits.length === 0 && typeof data === 'object' && !Array.isArray(data)) {
+      console.log('🔍 Searching nested structures for browser history...');
+      
+      // Check for common Takeout file patterns
+      const possibleFiles = [
+        'chrome-visits.json',
+        'BrowserHistory.json',
+        'History.json',
+        'visits.json'
+      ]
+      
+      for (const fileName of possibleFiles) {
+        if (data[fileName]) {
+          console.log(`✅ Found browser history file: ${fileName}`);
+          const fileData = data[fileName]
+          if (Array.isArray(fileData)) {
+            console.log(`✅ Using data from ${fileName}:`, fileData.length, 'items');
+            visits = fileData
+            break
+          }
+        }
+      }
+      
+      // Check for files ending with common patterns
+      if (visits.length === 0) {
+        for (const [fileName, fileData] of Object.entries(data)) {
+          if (typeof fileName === 'string' && Array.isArray(fileData)) {
+            const lowerFileName = fileName.toLowerCase()
+            if (lowerFileName.includes('visit') || 
+                lowerFileName.includes('history') || 
+                lowerFileName.includes('browser') ||
+                lowerFileName.includes('chrome')) {
+              console.log(`✅ Found potential browser history file: ${fileName}`);
+              
+              // Validate it looks like browser data
+              if (fileData.length > 0 && fileData[0]) {
+                const sample = fileData[0]
+                const hasUrl = !!(sample.url || sample.URL)
+                const hasTime = !!(sample.time_usec || sample.last_visit_time || sample.visit_time)
+                
+                if (hasUrl || hasTime) {
+                  console.log(`✅ Using data from ${fileName}:`, fileData.length, 'items');
+                  visits = fileData
+                  break
+                }
+              }
+            }
+          }
         }
       }
     }
@@ -243,6 +305,9 @@ export class BrowserHistoryAnalyzer {
         visits = visits.slice(0, 50000)
       }
       console.log('🔍 Raw visit keys:', Object.keys(visits[0] || {}));
+    } else {
+      console.log('❌ No visits found in data structure. Available keys:', 
+        typeof data === 'object' && !Array.isArray(data) ? Object.keys(data) : 'not object')
     }
 
     // Process and filter visits
@@ -255,7 +320,10 @@ export class BrowserHistoryAnalyzer {
         return true
       })
       .map(visit => {
-        console.log('🔍 Processing visit:', { url: visit?.url, time_usec: visit?.time_usec, id: visit?.id });
+        // Only log first few visits to avoid spam
+        if (processedVisits.length < 3) {
+          console.log('🔍 Processing visit:', { url: visit?.url, time_usec: visit?.time_usec, id: visit?.id });
+        }
         
         // Extract time with priority order for Chrome data
         const visitTime = visit.time_usec || 
@@ -267,7 +335,9 @@ export class BrowserHistoryAnalyzer {
                          visit.date ||
                          Date.now()
         
-        console.log('🔍 Extracted visit time:', visitTime, 'from visit:', visit?.url);
+        if (processedVisits.length < 3) {
+          console.log('🔍 Extracted visit time:', visitTime, 'from visit:', visit?.url);
+        }
       
         const processedVisit = {
           url: visit.url || visit.URL || visit.uri || visit.href || visit.link || '',
@@ -282,14 +352,18 @@ export class BrowserHistoryAnalyzer {
           time_usec: visit.time_usec
         }
       
-        console.log('🔍 Processed visit result:', { url: processedVisit.url, timestamp: processedVisit.timestamp });
+        if (processedVisits.length < 3) {
+          console.log('🔍 Processed visit result:', { url: processedVisit.url, timestamp: processedVisit.timestamp });
+        }
         
         return processedVisit
       })
       .filter(visit => {
         // Validate URL
         if (!visit.url || typeof visit.url !== 'string') {
-          console.log('❌ Invalid URL:', visit.url);
+          if (processedVisits.length < 10) {
+            console.log('❌ Invalid URL:', visit.url);
+          }
           return false
         }
         
@@ -304,7 +378,9 @@ export class BrowserHistoryAnalyzer {
         )
         
         if (!hasValidUrl) {
-          console.log('❌ Invalid URL format:', visit.url, 'length:', visit.url?.length);
+          if (processedVisits.length < 10) {
+            console.log('❌ Invalid URL format:', visit.url, 'length:', visit.url?.length);
+          }
           return false
         }
         
@@ -315,17 +391,23 @@ export class BrowserHistoryAnalyzer {
           visit.timestamp > 946684800000 // After year 2000
         
         if (!hasValidTimestamp) {
-          console.log('❌ Invalid timestamp:', visit.timestamp, 'original:', visit.visitTime, 'for URL:', visit.url);
+          if (processedVisits.length < 10) {
+            console.log('❌ Invalid timestamp:', visit.timestamp, 'original:', visit.visitTime, 'for URL:', visit.url);
+          }
           return false
         }
         
-        console.log('✅ Valid visit:', { url: visit.url.substring(0, 50), timestamp: visit.timestamp });
+        if (processedVisits.length < 3) {
+          console.log('✅ Valid visit:', { url: visit.url.substring(0, 50), timestamp: visit.timestamp });
+        }
         return true
       })
     
     console.log(`⏱️ Parsing took ${Date.now() - parseStartTime}ms`)
     console.log('✅ Final processed visits count:', processedVisits.length);
-    console.log('✅ Sample processed visit:', processedVisits[0]);
+    if (processedVisits.length > 0) {
+      console.log('✅ Sample processed visit:', processedVisits[0]);
+    }
     return processedVisits
   }
 

@@ -57,13 +57,18 @@ export const BrowserHistoryCharts: React.FC = () => {
     }
 
     console.log('📊 Starting browser history analysis...')
-    console.log('📊 Data loaded, preparing for analysis...')
+    console.log('📊 Data structure:', {
+      type: typeof data.data,
+      isArray: Array.isArray(data.data),
+      keys: typeof data.data === 'object' && !Array.isArray(data.data) ? Object.keys(data.data) : 'not object',
+      sampleData: Array.isArray(data.data) ? data.data[0] : data.data
+    })
     
     try {
       const analyzer = new BrowserHistoryAnalyzer(data.data)
       
       if (!analyzer.hasValidData()) {
-        console.log('❌ Analyzer reports no valid data')
+        console.log('❌ Analyzer reports no valid data. Data structure:', data.data)
         return null
       }
       
@@ -79,6 +84,7 @@ export const BrowserHistoryCharts: React.FC = () => {
       return result
     } catch (error) {
       console.error('❌ Error during browser history analysis:', error)
+      console.error('❌ Data that caused error:', data.data)
       return null
     }
   }, [data])
@@ -108,12 +114,18 @@ export const BrowserHistoryCharts: React.FC = () => {
               The browser history data format is not recognized. Please ensure you've uploaded a valid browser history file.
             </CardDescription>
             <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-950 rounded text-yellow-700 dark:text-yellow-300 text-sm">
-              <p>Expected formats:</p>
+              <p className="font-semibold mb-2">Expected formats:</p>
               <ul className="list-disc list-inside mt-2">
                 <li>Chrome visits.json export</li>
                 <li>Browser history JSON with visit records</li>
                 <li>Array of visit objects with URL and timestamp</li>
               </ul>
+              <div className="mt-3 p-2 bg-blue-50 dark:bg-blue-950 rounded">
+                <p className="text-xs font-semibold">Debug Info:</p>
+                <p className="text-xs">File: {data.fileName}</p>
+                <p className="text-xs">Records: {data.metadata.totalRecords}</p>
+                <p className="text-xs">Type: {data.type}</p>
+              </div>
             </div>
           </div>
         </CardContent>
